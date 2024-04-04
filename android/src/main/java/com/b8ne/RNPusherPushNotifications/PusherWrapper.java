@@ -73,22 +73,29 @@ public class PusherWrapper {
                             map.putString("click_action", notification.getClickAction());
                             map.putString("icon", notification.getIcon());
                             map.putString("color", notification.getColor());
-                            // map.putString("link", notification.getLink());
+                        }
 
-                            if (data != null) {
-                                WritableMap payload = Arguments.createMap();
+                        if (data != null && !data.isEmpty()) {
+                            WritableMap payload = Arguments.createMap();
 
-                                for(Map.Entry<String,String> entry : data.entrySet()) {
-                                    payload.putString(entry.getKey(), entry.getValue());
-                                }
-
-                                map.putMap("data", payload);
+                            for(Map.Entry<String,String> entry : data.entrySet()) {
+                                payload.putString(entry.getKey(), entry.getValue());
                             }
 
-                            context.getJSModule(DeviceEventManagerModule.RCTDeviceEventEmitter.class)
-                                    .emit(notificationEvent, map);
-                            // System.out.print(remoteMessage.toString());
-                            Log.d("PUSHER_WRAPPER", "Notification received: " + notification.toString());
+                            map.putMap("data", payload);
+                        }
+
+                        // Emit event to ReactNative side only if there's relevant information to send
+                        if (notification != null || (data != null && !data.isEmpty())) {
+                            try {
+                                context.getJSModule(DeviceEventManagerModule.RCTDeviceEventEmitter.class)
+                                        .emit(notificationEvent, map);
+                                Log.d("PUSHER_WRAPPER", "Notification received: " + 
+                                    (notification != null ? "Notification: " + notification.toString() : "No Notification") + ", " +
+                                    (data != null && !data.isEmpty() ? "Data: " + data.toString() : "No Data"));
+                            } catch (Exception e) {
+                                Log.e("PUSHER_WRAPPER", "Error emitting notification event", e);
+                            }
                         } else {
                             Log.d("PUSHER_WRAPPER", "No notification received");
                         }
